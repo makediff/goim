@@ -29,6 +29,7 @@ const (
 	routerServiceGetAll         = "RouterRPC.GetAll"
 )
 
+// 建立到router服务的连接
 func InitRouter(addrs map[string]string) (err error) {
 	var (
 		network, addr string

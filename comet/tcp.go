@@ -139,8 +139,11 @@ func (server *Server) serveTCP(conn *net.TCPConn, rp, wp *bytes.Pool, tr *itime.
 	}
 	// increase tcp stat
 	server.Stat.IncrTcpOnline()
+
+	// 每个和Comet保持长连接的client都开启一个协程，用于处理Logic Server给client发送信息
 	// hanshake ok start dispatch goroutine
 	go server.dispatchTCP(key, conn, wr, wp, wb, ch)
+
 	for {
 		if p, err = ch.CliProto.Set(); err != nil {
 			break
@@ -236,7 +239,7 @@ func (server *Server) dispatchTCP(key string, conn *net.TCPConn, wr *bufio.Write
 			finish = true
 			goto failed
 		case proto.ProtoReady:
-			// 从 Logic Server 读取数据, 再发送给 指定 Key
+			// 从 Logic Server 读取数据, 再发送给 指定 client
 			// fetch message from svrbox(client send)
 			for {
 				if p, err = ch.CliProto.Get(); err != nil {

@@ -42,6 +42,8 @@ func rpcListen(network, addr string) {
 	rpc.Accept(l)
 }
 
+// 以下是 logic 服务提供的 rpc 调用接口
+
 // RPC
 type RPC struct {
 	auther Auther
@@ -51,7 +53,7 @@ func (r *RPC) Ping(arg *proto.NoArg, reply *proto.NoReply) error {
 	return nil
 }
 
-// Connect auth and registe login
+// Connect auth and register login
 func (r *RPC) Connect(arg *proto.ConnArg, reply *proto.ConnReply) (err error) {
 	if arg == nil {
 		err = ErrConnectArgs
@@ -62,6 +64,8 @@ func (r *RPC) Connect(arg *proto.ConnArg, reply *proto.ConnReply) (err error) {
 		uid int64
 		seq int32
 	)
+
+	// 授权后会获得用户id和rid,已经由uid和rid做成一个key
 	uid, reply.RoomId = r.auther.Auth(arg.Token)
 	if seq, err = connect(uid, arg.Server, reply.RoomId); err == nil {
 		reply.Key = encode(uid, seq)

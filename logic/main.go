@@ -12,6 +12,9 @@ var (
 	DefaultStat *Stat
 )
 
+// comet 发送 rpc 调用给 logic
+// logic 发送 rpc 调用给 router
+
 func main() {
 	flag.Parse()
 	if err := InitConfig(); err != nil {
@@ -20,9 +23,11 @@ func main() {
 	runtime.GOMAXPROCS(Conf.MaxProc)
 	log.LoadConfiguration(Conf.Log)
 	defer log.Close()
+
 	log.Info("logic[%s] start", Ver)
 	perf.Init(Conf.PprofAddrs)
 	DefaultStat = NewStat()
+
 	// router rpc
 	if err := InitRouter(Conf.RouterRPCAddrs); err != nil {
 		panic(err)
