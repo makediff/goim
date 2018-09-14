@@ -43,6 +43,8 @@ func rpcListen(network, addr string) {
 	rpc.Accept(l)
 }
 
+// 这里所有的 RPC接口是给 Logic Server调用的
+
 // Push RPC
 type PushRPC struct {
 }
@@ -61,6 +63,10 @@ func (this *PushRPC) PushMsg(arg *proto.PushMsgArg, reply *proto.NoReply) (err e
 		err = ErrPushMsgArg
 		return
 	}
+
+	// 给指定的 key 发送消息
+	// 先通过 key 找到其对应的 Bucket， 再通过key找到Channel,再给Channel Push消息
+	// 每个Channel 对应的是一个客户端
 	bucket = DefaultServer.Bucket(arg.Key)
 	if channel = bucket.Channel(arg.Key); channel != nil {
 		err = channel.Push(&arg.P)
@@ -83,6 +89,8 @@ func (this *PushRPC) MPushMsg(arg *proto.MPushMsgArg, reply *proto.MPushMsgReply
 		err = ErrMPushMsgArg
 		return
 	}
+
+	// 一个消息发给多个Key
 	for n, key = range arg.Keys {
 		bucket = DefaultServer.Bucket(key)
 		if channel = bucket.Channel(key); channel != nil {
@@ -110,6 +118,8 @@ func (this *PushRPC) MPushMsgs(arg *proto.MPushMsgsArg, reply *proto.MPushMsgsRe
 		err = ErrMPushMsgsArg
 		return
 	}
+
+	// 一次多个消息发给多个 Bucket
 	for _, PMArg = range arg.PMArgs {
 		bucket = DefaultServer.Bucket(PMArg.Key)
 		if channel = bucket.Channel(PMArg.Key); channel != nil {
@@ -128,6 +138,8 @@ func (this *PushRPC) MPushMsgs(arg *proto.MPushMsgsArg, reply *proto.MPushMsgsRe
 // Broadcast broadcast msg to all user.
 func (this *PushRPC) Broadcast(arg *proto.BoardcastArg, reply *proto.NoReply) (err error) {
 	var bucket *Bucket
+
+	// 发给所有的Bucket
 	for _, bucket = range DefaultServer.Buckets {
 		go bucket.Broadcast(&arg.P)
 	}

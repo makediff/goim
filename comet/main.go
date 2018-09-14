@@ -61,6 +61,8 @@ func main() {
 		Timer:        Conf.Timer,
 		TimerSize:    Conf.TimerSize,
 	})
+
+	// 注意这里使用的 operator 和 DefaultServer
 	operator := new(DefaultOperator)
 	DefaultServer = NewServer(stat, buckets, round, operator, ServerOptions{
 		CliProto:         Conf.CliProto,

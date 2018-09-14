@@ -107,13 +107,18 @@ func (server *Server) serveTCP(conn *net.TCPConn, rp, wp *bytes.Pool, tr *itime.
 	)
 	ch.Reader.ResetBuffer(conn, rb.Bytes())
 	ch.Writer.ResetBuffer(conn, wb.Bytes())
+
+	// 超时时间到达后，自动关闭连接
 	// handshake
 	trd = tr.Add(server.Options.HandshakeTimeout, func() {
 		conn.Close()
 	})
+
 	// must not setadv, only used in auth
 	if p, err = ch.CliProto.Set(); err == nil {
+		// 连接后先处理授权，并分配 key 给当前连接
 		if key, rid, hb, err = server.authTCP(rr, wr, p); err == nil {
+			// 获取当前 client 所属于的 Bucket, 并把当前client加入到此Bucket的Room里
 			b = server.Bucket(key)
 			err = b.Put(key, rid, ch)
 		}
@@ -211,6 +216,8 @@ func (server *Server) dispatchTCP(key string, conn *net.TCPConn, wr *bufio.Write
 		if white {
 			DefaultWhitelist.Log.Printf("key: %s wait proto ready\n", key)
 		}
+
+		// Push 到 Bucket Channel 里的消息会在这里被接受到
 		var p = ch.Ready()
 		if white {
 			DefaultWhitelist.Log.Printf("key: %s proto ready\n", key)
@@ -229,6 +236,7 @@ func (server *Server) dispatchTCP(key string, conn *net.TCPConn, wr *bufio.Write
 			finish = true
 			goto failed
 		case proto.ProtoReady:
+			// 从 Logic Server 读取数据, 再发送给 指定 Key
 			// fetch message from svrbox(client send)
 			for {
 				if p, err = ch.CliProto.Get(); err != nil {
@@ -281,7 +289,7 @@ failed:
 	wp.Put(wb)
 	// must ensure all channel message discard, for reader won't blocking Signal
 	for !finish {
-		finish = (ch.Ready() == proto.ProtoFinish)
+		finish = ch.Ready() == proto.ProtoFinish
 	}
 	if Debug {
 		log.Debug("key: %s dispatch goroutine exit", key)
@@ -299,6 +307,10 @@ func (server *Server) authTCP(rr *bufio.Reader, wr *bufio.Writer, p *proto.Proto
 		err = ErrOperation
 		return
 	}
+
+	// 这里的 operator 使用的是 DefaultOperator ，连接的是 Logic Server
+	// 相当于发送 Auth 命令给 Logic Server
+	// rid 是 RoomID， 是由 Logic Server下发的
 	if key, rid, heartbeat, err = server.operator.Connect(p); err != nil {
 		return
 	}

@@ -39,6 +39,7 @@ func (operator *DefaultOperator) Operate(p *proto.Proto) error {
 	return nil
 }
 
+// 默认的 operator 是连接到 Logic Server的
 func (operator *DefaultOperator) Connect(p *proto.Proto) (key string, rid int32, heartbeat time.Duration, err error) {
 	key, rid, heartbeat, err = connect(p)
 	return

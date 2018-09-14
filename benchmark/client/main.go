@@ -96,6 +96,7 @@ func result() {
 }
 
 func client(key string) {
+	// @todo 这个key是做什么用的呢？
 	for {
 		startClient(key)
 		time.Sleep(3 * time.Second)
